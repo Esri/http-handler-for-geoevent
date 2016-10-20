@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0">
+	<reference id="messagingService" interface="com.esri.ges.messaging.Messaging" timeout="1000"/>
+	<reference id="gedManagerService" interface="com.esri.ges.manager.geoeventdefinition.GeoEventDefinitionManager" timeout="1000"/>
+	<reference id="httpClientService" interface="com.esri.ges.core.http.GeoEventHttpClientService" />	
+	<bean id="httpHandlerServiceBean" class="com.esri.geoevent.processor.httpHandler.HttpHandlerService" activation="eager">
+		<property name="bundleContext" ref="blueprintBundleContext"/>
+		<property name="messaging" ref="messagingService"/>
+		<property name="httpClientService" ref="httpClientService" />
+		<property name="geoEventDefinitionManager" ref="gedManagerService"/>
+	</bean>
+	<service id="HttpHandlerService" ref="httpHandlerServiceBean" interface="com.esri.ges.processor.GeoEventProcessorService">
+		<service-properties>
+			<entry key="threadSafe" value="false"/>
+		</service-properties>
+	</service>
+</blueprint>
