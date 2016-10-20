@@ -36,6 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -44,6 +45,8 @@ import org.apache.http.StatusLine;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.util.EntityUtils;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.json.JSONObject;
+import org.json.XML;
 
 import com.esri.ges.core.component.ComponentException;
 import com.esri.ges.core.geoevent.Field;
@@ -108,6 +111,7 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
   private String                    postParams;
   private int                       httpTimeoutValue;
   private String                    eom                                   = "";
+  private String					responseformat						  = "json";
 
   private Messaging                 messaging;
   private GeoEventCreator           geoEventCreator;
@@ -140,6 +144,9 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
 
     if (hasProperty("TrackIdField"))
       trackIdField = getProperty("TrackIdField").getValueAsString();
+
+    if (hasProperty("responseformat"))
+    	responseformat = getProperty("responseformat").getValueAsString();
     
     if (hasProperty(CLIENT_URL_PROPERTY))
       serviceURL = getProperty(CLIENT_URL_PROPERTY).getValueAsString();
@@ -424,6 +431,45 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
     }
   }
 
+  private String xmlToJson(String responseBody)
+  {
+	  String json = "";
+      if (responseBody.substring(0, 5).contains("<?xml"))
+      {
+        JSONObject jobj = XML.toJSONObject(responseBody);
+        json = jobj.toString();
+        LOGGER.debug(json);        
+      }       
+	  
+	  return json;
+  }
+
+  private String csvToJson(String responseBody)
+  {
+	  String[] values = responseBody.split(",");
+	  String json = "{\"data\" : ";
+	  for (Integer i = 0; i < values.length; i++)
+	  {
+		  if(NumberUtils.isNumber(values[i]))
+		  {
+			  json += "\"field" + i.toString() + "\":" + values[i];		  			  
+		  }
+		  else
+		  {
+			  json += "\"field" + i.toString() + "\":\"" + values[i] + "\"";		  			  			  
+		  }
+		  if (i < values.length-1)
+		  {
+			  json += ",";
+		  }
+	  }
+	  json += "}";
+	  
+      LOGGER.debug(json);        
+	  
+	  return json;
+  }
+  
   private void getFeed(String endpointURL)
   {
     // System.out.println("getFeed: " + messageType);
@@ -455,15 +501,23 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
 
         try
         {
-          String output = EntityUtils.toString(entity);
-          LOGGER.debug(output);
-          System.out.println(output);
+          String responseBody = EntityUtils.toString(entity);
+          LOGGER.debug(responseBody);
+          System.out.println(responseBody);
+          
+          if (responseformat.equals("xml"))
+          {
+        	  responseBody = xmlToJson(responseBody);
+          }
+          else if (responseformat.equalsIgnoreCase("csv"))
+          {
+        	  responseBody = csvToJson(responseBody);
+          }
 
-          // JsonNode tree = mapper.readTree(output);
           // Send Message
           try
           {
-            httpHandlerAdapter.receive(output);
+            httpHandlerAdapter.receive(responseBody);
           }
           catch (Exception e)
           {

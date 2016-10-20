@@ -30,6 +30,8 @@
 						<Bundle-Version>${project.version}</Bundle-Version>
 						<Export-Package />
 						<Private-Package>com.esri.geoevent.processor.httpHandler</Private-Package>
+						<Import-Package>*,!org.son</Import-Package>
+                		<Embed-Dependency>json</Embed-Dependency>
 					</instructions>
 				</configuration>
 			</plugin>
