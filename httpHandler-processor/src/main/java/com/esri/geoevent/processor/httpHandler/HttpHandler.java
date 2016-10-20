@@ -104,7 +104,8 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
   protected String                  postBody;
   private boolean                   honorLastModified;
   private String                    trackIdField;
-
+  private String 					fieldSeparator;
+  
   private Boolean                   useLongPolling                        = false;
   private String                    headerParams;
   private String                    postFrom;
@@ -147,6 +148,9 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
 
     if (hasProperty("responseFormat"))
     	responseFormat = getProperty("responseFormat").getValueAsString();
+
+    if (hasProperty("fieldSeparator"))
+    	fieldSeparator = getProperty("fieldSeparator").getValueAsString();
     
     if (hasProperty(CLIENT_URL_PROPERTY))
       serviceURL = getProperty(CLIENT_URL_PROPERTY).getValueAsString();
@@ -446,7 +450,7 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
 
   private String csvToJson(String responseBody)
   {
-	  String[] values = responseBody.split(",");
+	  String[] values = responseBody.split(fieldSeparator);
 	  String json = "{\"data\" : ";
 	  for (Integer i = 0; i < values.length; i++)
 	  {
