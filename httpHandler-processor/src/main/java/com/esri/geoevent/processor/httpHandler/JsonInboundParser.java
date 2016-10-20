@@ -366,10 +366,6 @@ public class JsonInboundParser
           {
             if (fd.getName().equals(fieldName))
             {
-              if(fieldName.equals(trackIdField))
-              {
-                fd.addTag("TRACK_ID");
-              }
               JsonNode n = node.get(fieldName);
               if (n != null)
               {
@@ -609,6 +605,10 @@ public class JsonInboundParser
         if (fieldDef != null)
         {
           fieldDef.setCardinality(cardinality);
+          if(fieldName.equals(trackIdField))
+          {
+        	fieldDef.addTag("TRACK_ID");
+          }
           fieldDefinitions.add(fieldDef);
         }
       }

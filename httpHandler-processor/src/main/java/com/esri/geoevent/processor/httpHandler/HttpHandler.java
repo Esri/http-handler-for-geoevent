@@ -141,8 +141,6 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
 
   public void afterPropertiesSet()
   {
-    httpHandlerAdapter.afterPropertiesSet(this);
-
     if (hasProperty("TrackIdField"))
       trackIdField = getProperty("TrackIdField").getValueAsString();
 
@@ -223,6 +221,12 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
      * eom = StringEscapeUtils.unescapeJava(getProperty(HttpTransportService.
      * HTTP_APPEND_TO_MESSAGE).getValueAsString());
      */    
+    
+	if (httpHandlerAdapter == null)
+	{
+    	httpHandlerAdapter = new HttpHandlerAdapter(geoEventCreator, geoEventProducer, processDefinition, getId(), trackIdField);        		
+	}
+    httpHandlerAdapter.afterPropertiesSet(this);
   }
 
   @Override
@@ -231,9 +235,7 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
     super.setId(id);
 
     destination = new EventDestination(getId() + ":event");
-    geoEventProducer = messaging.createGeoEventProducer(new EventDestination(id + ":event"));
-        
-    httpHandlerAdapter = new HttpHandlerAdapter(geoEventCreator, geoEventProducer, processDefinition, id, trackIdField);
+    geoEventProducer = messaging.createGeoEventProducer(new EventDestination(id + ":event"));        
   }
   
   @Override
@@ -521,6 +523,7 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
           // Send Message
           try
           {
+
             httpHandlerAdapter.receive(responseBody);
           }
           catch (Exception e)
