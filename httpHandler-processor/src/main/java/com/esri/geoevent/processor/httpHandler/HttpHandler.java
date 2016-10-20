@@ -111,7 +111,7 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
   private String                    postParams;
   private int                       httpTimeoutValue;
   private String                    eom                                   = "";
-  private String					responseformat						  = "json";
+  private String					responseFormat						  = "json";
 
   private Messaging                 messaging;
   private GeoEventCreator           geoEventCreator;
@@ -145,8 +145,8 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
     if (hasProperty("TrackIdField"))
       trackIdField = getProperty("TrackIdField").getValueAsString();
 
-    if (hasProperty("responseformat"))
-    	responseformat = getProperty("responseformat").getValueAsString();
+    if (hasProperty("responseFormat"))
+    	responseFormat = getProperty("responseFormat").getValueAsString();
     
     if (hasProperty(CLIENT_URL_PROPERTY))
       serviceURL = getProperty(CLIENT_URL_PROPERTY).getValueAsString();
@@ -434,7 +434,7 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
   private String xmlToJson(String responseBody)
   {
 	  String json = "";
-      if (responseBody.substring(0, 5).contains("<?xml"))
+      if (responseBody.substring(0, 10).contains("<?xml"))
       {
         JSONObject jobj = XML.toJSONObject(responseBody);
         json = jobj.toString();
@@ -505,11 +505,11 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
           LOGGER.debug(responseBody);
           System.out.println(responseBody);
           
-          if (responseformat.equals("xml"))
+          if (responseFormat.equals("xml"))
           {
         	  responseBody = xmlToJson(responseBody);
           }
-          else if (responseformat.equalsIgnoreCase("csv"))
+          else if (responseFormat.equalsIgnoreCase("csv"))
           {
         	  responseBody = csvToJson(responseBody);
           }

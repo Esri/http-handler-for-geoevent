@@ -54,7 +54,7 @@ public class HttpHandlerDefinition extends GeoEventProcessorDefinitionBase
       formatAllowedValues.add(new LabeledValue("Json", "json"));
       formatAllowedValues.add(new LabeledValue("XML", "xml"));
       formatAllowedValues.add(new LabeledValue("CSV", "csv"));
-      propertyDefinitions.put("responseformat", new PropertyDefinition("Response Format", PropertyType.String, "json", "Response Format", "Response Format", true, false, formatAllowedValues));
+      propertyDefinitions.put("responseFormat", new PropertyDefinition("responseFormat", PropertyType.String, "json", "Response Format", "Response Format", true, false, formatAllowedValues));
 
       List<LabeledValue> modeAllowedValues = new ArrayList<>();
       formatAllowedValues.add(new LabeledValue("Server", "SERVER"));
