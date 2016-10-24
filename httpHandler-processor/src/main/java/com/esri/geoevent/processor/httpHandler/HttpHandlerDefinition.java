@@ -77,7 +77,7 @@ public class HttpHandlerDefinition extends GeoEventProcessorDefinitionBase
       propertyDefinitions.put("BuildGeometryFromFields", new PropertyDefinition("BuildGeometryFromFields", PropertyType.Boolean, true, "Build Geometry From Fields", "Build geometry from fields", false, false));
       propertyDefinitions.put("XGeometryField", new PropertyDefinition("XGeometryField", PropertyType.String, "Longitude", "X Geometry Field", "X Geometry Field", "BuildGeometryFromFields=true", false, false));
       propertyDefinitions.put("YGeometryField", new PropertyDefinition("YGeometryField", PropertyType.String, "Latitude", "Y Geometry Field", "Y Geometry Field", "BuildGeometryFromFields=true", false, false));
-      propertyDefinitions.put("ZGeometryField", new PropertyDefinition("ZGeometryField", PropertyType.String, "Altitude", "Z Geometry Field", "Z Geometry Field", "BuildGeometryFromFields=true", false, false));
+      propertyDefinitions.put("ZGeometryField", new PropertyDefinition("ZGeometryField", PropertyType.String, "", "Z Geometry Field", "Z Geometry Field", "BuildGeometryFromFields=true", false, false));
       propertyDefinitions.put("WKIDGeometryField", new PropertyDefinition("WKIDGeometryField", PropertyType.String, "4326", "WKID Filed or Value", "WKID field or value", false, false));
       propertyDefinitions.put("frequency", new PropertyDefinition("frequency", PropertyType.Integer, "5", "Frequency", "Frequency in seconds", false, false));
       propertyDefinitions.put("httpTimeoutValue", new PropertyDefinition("httpTimeoutValue", PropertyType.Integer, "5", "Http Timeout Value", "Http Timeout Value", false, false));

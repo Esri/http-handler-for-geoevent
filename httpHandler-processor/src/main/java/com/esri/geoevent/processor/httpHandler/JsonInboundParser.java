@@ -232,17 +232,19 @@ public class JsonInboundParser
         if (xObject != null)
           x = Converter.convertToDouble(xObject);
         else
-          LOGGER.warn("FIELD_PARSE_ERROR", xGeometryField, "x");
+          LOGGER.warn("X Geometry field is null", xGeometryField, "x");
         Object yObject = event.getField(yGeometryField);
         if (yObject != null)
           y = Converter.convertToDouble(yObject);
         else
-          LOGGER.warn("FIELD_PARSE_ERROR", yGeometryField, "y");
+          LOGGER.warn("Y Geometry field is null", yGeometryField, "y");
         if (zGeometryField != null)
         {
           Object zObject = event.getField(zGeometryField);
           if (zObject != null)
             z = Converter.convertToDouble(zObject);
+          else
+            LOGGER.debug("Z Geometry field is null", zGeometryField, "z");        	  
         }
         if (!Validator.isEmpty(wkidGeometryField))
         {

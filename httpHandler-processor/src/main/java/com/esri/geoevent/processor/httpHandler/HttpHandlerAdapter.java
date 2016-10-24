@@ -130,6 +130,21 @@ public class HttpHandlerAdapter implements Runnable
     }
   }
   
+  public String getGeoEventDefinitionName()
+  {
+	return geoEventDefinitionName;
+  }
+  
+  public Boolean getCreateGeoEventDefinition()
+  {
+	return creatingGeoEventDefinition;
+  }
+  
+  public Boolean getBuildGeometryFromFields()
+  {
+	return buildGeometryFromFields;  
+  }
+  
   public void afterPropertiesSet(HttpHandler httpHandler)
   {
     jsonObjectName = null;
@@ -327,12 +342,12 @@ public class HttpHandlerAdapter implements Runnable
     //    .setCustomDateFormat(customDateFormat).setGeoEventCreator(geoEventCreator);
     // .setUri(uri);
 
-    if (geoEventDefName.equals("WazeAlert"))
-    {
-      parser.setBuildGeometryFromFields(buildGeometryFromFields).setxGeometryField(xGeometryField).setyGeometryField(yGeometryField).setzGeometryField(zGeometryField);
+    //if (geoEventDefName.equals("WazeAlert"))
+    //{
+      //parser.setBuildGeometryFromFields(buildGeometryFromFields).setxGeometryField(xGeometryField).setyGeometryField(yGeometryField).setzGeometryField(zGeometryField);
       // .setWkidGeometryField(wkidGeometryField)
       // .setWkTextGeometryField(wkTextGeometryField);
-    }
+    //}
     return parser;
   }
 

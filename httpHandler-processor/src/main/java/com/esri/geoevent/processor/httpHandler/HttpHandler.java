@@ -29,6 +29,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Observable;
@@ -48,8 +49,10 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.json.JSONObject;
 import org.json.XML;
 
+import com.esri.ges.core.ConfigurationException;
 import com.esri.ges.core.component.ComponentException;
 import com.esri.ges.core.geoevent.Field;
+import com.esri.ges.core.geoevent.FieldDefinition;
 import com.esri.ges.core.geoevent.FieldExpression;
 import com.esri.ges.core.geoevent.GeoEvent;
 import com.esri.ges.core.geoevent.GeoEventDefinition;
@@ -104,15 +107,15 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
   protected String                  postBody;
   private boolean                   honorLastModified;
   private String                    trackIdField;
-  private String 					fieldSeparator;
-  
+  private String                    fieldSeparator;
+
   private Boolean                   useLongPolling                        = false;
   private String                    headerParams;
   private String                    postFrom;
   private String                    postParams;
   private int                       httpTimeoutValue;
   private String                    eom                                   = "";
-  private String					responseFormat						  = "json";
+  private String                    responseFormat                        = "json";
 
   private Messaging                 messaging;
   private GeoEventCreator           geoEventCreator;
@@ -125,18 +128,19 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
   private String                    newGeoEventDefinitionName;
 
   private HttpHandlerDefinition     processDefinition;
-  
+
   final Object                      lock1                                 = new Object();
   private static final ObjectMapper mapper                                = new ObjectMapper();
-  
-  private String[]                  urlParts;
 
-  ExecutorService executor = Executors.newFixedThreadPool(20);
+  private String[]                  urlParts;
+  private String                    lastGeoEventDefinitionsGUID;
+
+  ExecutorService                   executor                              = Executors.newFixedThreadPool(20);
 
   protected HttpHandler(GeoEventProcessorDefinition definition) throws ComponentException
   {
     super(definition);
-    this.processDefinition = (HttpHandlerDefinition)definition;
+    this.processDefinition = (HttpHandlerDefinition) definition;
   }
 
   public void afterPropertiesSet()
@@ -145,14 +149,14 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
       trackIdField = getProperty("TrackIdField").getValueAsString();
 
     if (hasProperty("responseFormat"))
-    	responseFormat = getProperty("responseFormat").getValueAsString();
+      responseFormat = getProperty("responseFormat").getValueAsString();
 
     if (hasProperty("fieldSeparator"))
-    	fieldSeparator = getProperty("fieldSeparator").getValueAsString();
-    
+      fieldSeparator = getProperty("fieldSeparator").getValueAsString();
+
     if (hasProperty(CLIENT_URL_PROPERTY))
       serviceURL = getProperty(CLIENT_URL_PROPERTY).getValueAsString();
-        
+
     if (hasProperty(HTTP_METHOD_PROPERTY))
       httpMethod = getProperty(HTTP_METHOD_PROPERTY).getValueAsString();
 
@@ -162,7 +166,7 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
       if (hasProperty(FREQUENCY_PROPERTY))
       {
         stringValue = getProperty(FREQUENCY_PROPERTY).getValueAsString();
-        frequency = Integer.parseInt(stringValue);        
+        frequency = Integer.parseInt(stringValue);
       }
     }
     catch (NumberFormatException ex)
@@ -193,17 +197,17 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
 
     /*
      * Boolean useProxy = (Boolean)
-     * getProperty(HttpTransportService.CLIENT_URL_USE_PROXY_PROPERTY).getValue(
-     * ); if (useProxy) { String proxy =
+     * getProperty(HttpTransportService.CLIENT_URL_USE_PROXY_PROPERTY).
+     * getValue( ); if (useProxy) { String proxy =
      * getProperty(HttpTransportService.CLIENT_URL_PROXY_PROPERTY).
      * getValueAsString(); clientUrl = proxy + "?" + clientUrl; }
      * 
      * clientParameters =
      * getProperty(HttpTransportService.CLIENT_PARAMETERS_PROPERTY).
      * getValueAsString(); acceptableMimeTypes_client =
-     * getProperty(HttpTransportService.ACCEPTABLE_MIME_TYPES_CLIENT_PROPERTY).
+     * getProperty(HttpTransportService. ACCEPTABLE_MIME_TYPES_CLIENT_PROPERTY).
      * getValueAsString(); acceptableMimeTypes_server =
-     * getProperty(HttpTransportService.ACCEPTABLE_MIME_TYPES_SERVER_PROPERTY).
+     * getProperty(HttpTransportService. ACCEPTABLE_MIME_TYPES_SERVER_PROPERTY).
      * getValueAsString(); postBodyType =
      * getProperty(HttpTransportService.POST_CONTENT_TYPE_PROPERTY).
      * getValueAsString(); honorLastModified =
@@ -215,17 +219,17 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
      * getValueAsString().equals("true") ? true : false;
      * 
      * postFrom =
-     * getProperty(HttpTransportService.POST_FROM_PROPERTY).getValueAsString();
-     * postParams =
-     * getProperty(HttpTransportService.POST_PARAM_PROPERTY).getValueAsString();
-     * eom = StringEscapeUtils.unescapeJava(getProperty(HttpTransportService.
+     * getProperty(HttpTransportService.POST_FROM_PROPERTY).getValueAsString ();
+     * postParams = getProperty(HttpTransportService.POST_PARAM_PROPERTY).
+     * getValueAsString(); eom =
+     * StringEscapeUtils.unescapeJava(getProperty(HttpTransportService.
      * HTTP_APPEND_TO_MESSAGE).getValueAsString());
-     */    
-    
-	if (httpHandlerAdapter == null)
-	{
-    	httpHandlerAdapter = new HttpHandlerAdapter(geoEventCreator, geoEventProducer, processDefinition, getId(), trackIdField);        		
-	}
+     */
+
+    if (httpHandlerAdapter == null)
+    {
+      httpHandlerAdapter = new HttpHandlerAdapter(geoEventCreator, geoEventProducer, processDefinition, getId(), trackIdField);
+    }
     httpHandlerAdapter.afterPropertiesSet(this);
   }
 
@@ -235,21 +239,21 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
     super.setId(id);
 
     destination = new EventDestination(getId() + ":event");
-    geoEventProducer = messaging.createGeoEventProducer(new EventDestination(id + ":event"));        
+    geoEventProducer = messaging.createGeoEventProducer(new EventDestination(id + ":event"));
   }
-  
+
   @Override
   public GeoEvent process(GeoEvent geoevent) throws Exception
   {
     GeoEventDefinition gd = geoevent.getGeoEventDefinition();
-    //"http://server/{f1}/folder/{f2}?value={f3}";
+    // "http://server/{f1}/folder/{f2}?value={f3}";
     urlParts = serviceURL.split("[{*}]");
     String[] tempUrlParts = Arrays.copyOf(urlParts, urlParts.length);
     String newURL = "";
     for (int i = 0; i < tempUrlParts.length; i++)
     {
       Integer idx = gd.getIndexOf(tempUrlParts[i]);
-      //LOGGER.info(tempUrlParts[i].toString() + ":" + idx.toString());
+      // LOGGER.info(tempUrlParts[i].toString() + ":" + idx.toString());
       if (idx >= 0)
       {
         Field field = geoevent.getField(new FieldExpression(tempUrlParts[i]));
@@ -259,55 +263,35 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
           tempUrlParts[i] = fieldValue;
           if (fieldValue != null)
           {
-            //LOGGER.info("Got " + field.getDefinition().getName() + " " + tempUrlParts[i]);        
+            // LOGGER.info("Got " + field.getDefinition().getName()
+            // + " " + tempUrlParts[i]);
           }
         }
       }
       newURL += tempUrlParts[i];
     }
     LOGGER.debug("New URL " + newURL);
-    
+
     HttpRequester httpRequester = new HttpRequester(newURL);
     executor.execute(httpRequester);
 
-    //getFeed(newURL);
+    // getFeed(newURL);
     return null;
   }
 
   /*
-      ArrayNode arrayNode = null;
-      if (body.substring(0, 5).contains("<?xml"))
-      {
-        JSONObject jobj = XML.toJSONObject(body);
-        String json = jobj.toString();
-        LOGGER.debug(json);
-        JsonNode tree = mapper.readTree(json);
-        if (tree.isArray() == false)
-        {
-          arrayNode = (ArrayNode)tree.findPath(collectionName);
-        }
-      }
-      else
-      {
-        //Parse and put on the elementMap
-        JsonNode tree = mapper.readTree(body);
-        arrayNode = (ArrayNode)tree.get(collectionName);
-      }
-      if (arrayNode != null)
-      {
-        int count = arrayNode.size();
-        for(int i = 0; i < count; i++)
-        {
-          JsonNode item = arrayNode.get(i);
-          String id = item.get(elementIdField).asText();
-          synchronized (locker)
-          {
-            itemMap.put(id, item.toString());
-          }
-        }     
-      }       
+   * ArrayNode arrayNode = null; if (body.substring(0, 5).contains("<?xml")) {
+   * JSONObject jobj = XML.toJSONObject(body); String json = jobj.toString();
+   * LOGGER.debug(json); JsonNode tree = mapper.readTree(json); if
+   * (tree.isArray() == false) { arrayNode =
+   * (ArrayNode)tree.findPath(collectionName); } } else { //Parse and put on the
+   * elementMap JsonNode tree = mapper.readTree(body); arrayNode =
+   * (ArrayNode)tree.get(collectionName); } if (arrayNode != null) { int count =
+   * arrayNode.size(); for(int i = 0; i < count; i++) { JsonNode item =
+   * arrayNode.get(i); String id = item.get(elementIdField).asText();
+   * synchronized (locker) { itemMap.put(id, item.toString()); } } }
    */
-  
+
   @Override
   public List<EventDestination> getEventDestinations()
   {
@@ -320,9 +304,10 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
     super.validate();
     List<String> errors = new ArrayList<String>();
     /*
-    if (reportInterval <= 0)
-      errors.add(LOGGER.translate("VALIDATION_INVALID_REPORT_INTERVAL", definition.getName()));
-    */  
+     * if (reportInterval <= 0)
+     * errors.add(LOGGER.translate("VALIDATION_INVALID_REPORT_INTERVAL",
+     * definition.getName()));
+     */
     if (errors.size() > 0)
     {
       StringBuffer sb = new StringBuffer();
@@ -349,7 +334,8 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
     if (executor != null)
     {
       executor.shutdown();
-      while (!executor.isTerminated()) {
+      while (!executor.isTerminated())
+      {
       }
       executor = null;
     }
@@ -439,43 +425,104 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
 
   private String xmlToJson(String responseBody)
   {
-	  String json = "";
-      if (responseBody.substring(0, 10).contains("<?xml"))
-      {
-        JSONObject jobj = XML.toJSONObject(responseBody);
-        json = jobj.toString();
-        LOGGER.debug(json);        
-      }       
-	  
-	  return json;
+    String json = "";
+    if (responseBody.substring(0, 10).contains("<?xml"))
+    {
+      JSONObject jobj = XML.toJSONObject(responseBody);
+      json = jobj.toString();
+      LOGGER.debug(json);
+    }
+
+    return json;
   }
 
   private String csvToJson(String responseBody)
   {
-	  String[] values = responseBody.split(fieldSeparator);
-	  String json = "{\"data\" : ";
-	  for (Integer i = 0; i < values.length; i++)
-	  {
-		  if(NumberUtils.isNumber(values[i]))
-		  {
-			  json += "\"field" + i.toString() + "\":" + values[i];		  			  
-		  }
-		  else
-		  {
-			  json += "\"field" + i.toString() + "\":\"" + values[i] + "\"";		  			  			  
-		  }
-		  if (i < values.length-1)
-		  {
-			  json += ",";
-		  }
-	  }
-	  json += "}";
-	  
-      LOGGER.debug(json);        
-	  
-	  return json;
+    //TODO - test this
+    String geoEventDefinitionName = httpHandlerAdapter.getGeoEventDefinitionName();
+    String[] values = responseBody.split(fieldSeparator);
+    String json = "{\"" + geoEventDefinitionName + "\" : ";
+    if (httpHandlerAdapter.getCreateGeoEventDefinition())
+    {
+      for (Integer i = 0; i < values.length; i++)
+      {
+        if (NumberUtils.isNumber(values[i]))
+        {
+          json += "\"field" + i.toString() + "\":" + values[i];
+        }
+        else
+        {
+          json += "\"field" + i.toString() + "\":\"" + values[i] + "\"";
+        }
+        if (i < values.length - 1)
+        {
+          json += ",";
+        }
+      }
+    }
+    else
+    {
+      int perfectSize = values.length;
+      if (httpHandlerAdapter.getBuildGeometryFromFields())
+        perfectSize++;
+
+      GeoEventDefinition geoEventDefinition = null;
+      if (lastGeoEventDefinitionsGUID != null)
+      {
+        GeoEventDefinition def = geoEventCreator.getGeoEventDefinitionManager().getGeoEventDefinition(lastGeoEventDefinitionsGUID);
+        // if the old definition still exists and hasn't been modified
+        // structurally, just reuse it.
+        if (def != null && def.getFieldDefinitions().size() == perfectSize)
+          geoEventDefinition = def;
+      }
+
+      if (geoEventDefinition == null)
+      {
+        Collection<GeoEventDefinition> searchResults = geoEventCreator.getGeoEventDefinitionManager().searchGeoEventDefinitionByName(geoEventDefinitionName);
+        for (GeoEventDefinition candidate : searchResults)
+        {
+          if (candidate.getFieldDefinitions().size() == perfectSize)
+          {
+            geoEventDefinition = candidate;
+            break;
+          }
+        }
+        if (geoEventDefinition == null)
+          geoEventDefinition = searchResults.iterator().next();
+      }
+      if (geoEventDefinition == null)
+      {
+        LOGGER.error("GED_DOESNT_EXIST");
+        return null;
+      }
+      lastGeoEventDefinitionsGUID = geoEventDefinition.getGuid();
+
+      List<FieldDefinition> fds = geoEventDefinition.getFieldDefinitions();
+      for (Integer i = 0; i < values.length; i++)
+      {
+        FieldDefinition fd = fds.get(i);
+        String fieldName = fd.getName();
+        if (NumberUtils.isNumber(values[i]))
+        {
+          json += "\"" + fieldName + "\":" + values[i];
+        }
+        else
+        {
+          json += "\"" + fieldName + "\":\"" + values[i] + "\"";
+        }
+        if (i < values.length - 1)
+        {
+          json += ",";
+        }
+      }
+    }
+    json += "}";
+
+    LOGGER.debug(json);
+
+    return json;
   }
-  
+
   private void getFeed(String endpointURL)
   {
     // System.out.println("getFeed: " + messageType);
@@ -510,26 +557,27 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
           String responseBody = EntityUtils.toString(entity);
           LOGGER.debug(responseBody);
           System.out.println(responseBody);
-          
+
           if (responseFormat.equals("xml"))
           {
-        	  responseBody = xmlToJson(responseBody);
+            responseBody = xmlToJson(responseBody);
           }
           else if (responseFormat.equalsIgnoreCase("csv"))
           {
-        	  responseBody = csvToJson(responseBody);
+            responseBody = csvToJson(responseBody);
           }
 
           // Send Message
           try
           {
-
-            httpHandlerAdapter.receive(responseBody);
+            if (responseBody != null)
+            {
+              httpHandlerAdapter.receive(responseBody);
+            }
           }
           catch (Exception e)
           {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            LOGGER.error(e.getMessage());
           }
         }
         catch (ParseException | IOException e)
@@ -547,10 +595,11 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
       LOGGER.error("getFeed " + e1.getMessage());
     }
   }
-  
+
   class HttpRequester implements Runnable
-  {    
+  {
     private String endpointURL;
+
     public HttpRequester(String endpointURL)
     {
       this.endpointURL = endpointURL;
@@ -561,5 +610,5 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
     {
       getFeed(endpointURL);
     }
-  }  
+  }
 }
