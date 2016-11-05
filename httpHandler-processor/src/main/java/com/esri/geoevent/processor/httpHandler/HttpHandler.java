@@ -133,6 +133,8 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
   private static final ObjectMapper mapper                                = new ObjectMapper();
 
   private String[]                  urlParts;
+  private String[]                  headers;
+
   private String                    lastGeoEventDefinitionsGUID;
 
   ExecutorService                   executor                              = Executors.newFixedThreadPool(20);
@@ -176,7 +178,10 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
     if (hasProperty(POST_BODY_PROPERTY))
       postBody = getProperty(POST_BODY_PROPERTY).getValueAsString();
     if (hasProperty(HEADER_PROPERTY))
+    {
       headerParams = getProperty(HEADER_PROPERTY).getValueAsString();
+      headers = headerParams.split("[|]");
+    }
 
     if (hasProperty(HTTP_TIMEOUT_VALUE))
     {
@@ -533,6 +538,15 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
       URL url = new URL(endpointURL);
       String queryString = "";
       HttpGet httpGet = geHttp.createGetRequest(url, queryString);
+
+      if (headers.length > 0) 
+      {
+        for (int i = 0; i < headers.length; i++)
+        {
+          String[] nameValue = headers[i].split(":");
+          httpGet.addHeader(nameValue[0], nameValue[1]);       
+        }
+      }
 
       try
       {
