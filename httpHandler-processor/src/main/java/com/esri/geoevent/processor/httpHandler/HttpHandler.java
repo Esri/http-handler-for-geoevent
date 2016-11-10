@@ -431,7 +431,7 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
   private String xmlToJson(String responseBody)
   {
     String json = "";
-    if (responseBody.substring(0, 10).contains("<?xml"))
+    //if (responseBody.substring(0, 10).contains("<?xml"))
     {
       JSONObject jobj = XML.toJSONObject(responseBody);
       json = jobj.toString();
