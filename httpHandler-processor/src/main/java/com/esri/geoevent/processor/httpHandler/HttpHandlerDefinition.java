@@ -104,7 +104,7 @@ public class HttpHandlerDefinition extends GeoEventProcessorDefinitionBase
   @Override
   public String getVersion()
   {
-    return "10.4.0";
+    return "10.5.0";
   }
 
   @Override

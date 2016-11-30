@@ -12,3 +12,8 @@
 hs_err_pid*
 *.project
 *.prefs
+*.classpath
+*.classpath
+httpHandler-processor/.classpath
+httpHandler-processor/.classpath
+*.classpath
