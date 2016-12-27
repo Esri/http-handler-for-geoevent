@@ -27,9 +27,12 @@ package com.esri.geoevent.processor.httpHandler;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Observable;
@@ -43,13 +46,12 @@ import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.ParseException;
 import org.apache.http.StatusLine;
-import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.util.EntityUtils;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.json.JSONObject;
 import org.json.XML;
 
-import com.esri.ges.core.ConfigurationException;
 import com.esri.ges.core.component.ComponentException;
 import com.esri.ges.core.geoevent.Field;
 import com.esri.ges.core.geoevent.FieldDefinition;
@@ -95,6 +97,7 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
   public static final String        POST_PARAM_PROPERTY                   = "clientPostParameters";
   public static final String        HTTP_TIMEOUT_VALUE                    = "httpTimeoutValue";
   public static final String        HTTP_APPEND_TO_MESSAGE                = "httpAppendToEnd";
+  public static final String        CUSTOM_DATE_FORMAT_PROPERTY_NAME      = "CustomDateFormat";
 
   private String                    serviceURL;
   protected String                  clientUrl;
@@ -126,6 +129,9 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
   private GeoEventDefinitionManager geoEventDefinitionManager;
   private Map<String, String>       edMapper                              = new ConcurrentHashMap<String, String>();
   private String                    newGeoEventDefinitionName;
+  private Date                      lastPollingDateTime;
+  private int                       historicalTimespanSeconds;
+  private Boolean                   useEpochMilliseconds;
 
   private HttpHandlerDefinition     processDefinition;
 
@@ -134,7 +140,8 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
 
   private String[]                  urlParts;
   private String[]                  headers;
-
+  private String[]                  postBodyParts;
+  
   private String                    lastGeoEventDefinitionsGUID;
 
   ExecutorService                   executor                              = Executors.newFixedThreadPool(20);
@@ -180,7 +187,10 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
     if (hasProperty(HEADER_PROPERTY))
     {
       headerParams = getProperty(HEADER_PROPERTY).getValueAsString();
-      headers = headerParams.split("[|]");
+      if (headerParams.isEmpty() == false)
+      {
+        headers = headerParams.split("[|]");        
+      }
     }
 
     if (hasProperty(HTTP_TIMEOUT_VALUE))
@@ -197,8 +207,9 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
       catch (NumberFormatException ex)
       {
         LOGGER.error("INT_PARSE_ERROR", HTTP_TIMEOUT_VALUE, secStr);
-      }
+      }      
     }
+        
 
     /*
      * Boolean useProxy = (Boolean)
@@ -231,6 +242,19 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
      * HTTP_APPEND_TO_MESSAGE).getValueAsString());
      */
 
+    if (hasProperty("historicalTimespanSeconds"))
+    {
+      historicalTimespanSeconds = Integer.parseInt(getProperty("historicalTimespanSeconds").getValueAsString());
+      Calendar calendar = Calendar.getInstance(); // gets a calendar using the default time zone and locale.
+      calendar.add(Calendar.SECOND, -historicalTimespanSeconds);
+      lastPollingDateTime = calendar.getTime();
+    }
+    
+    if (hasProperty("useEpochMilliseconds"))
+    {
+      useEpochMilliseconds = Boolean.parseBoolean(getProperty("useEpochMilliseconds").getValueAsString());
+    }
+
     if (httpHandlerAdapter == null)
     {
       httpHandlerAdapter = new HttpHandlerAdapter(geoEventCreator, geoEventProducer, processDefinition, getId(), trackIdField);
@@ -255,6 +279,7 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
     urlParts = serviceURL.split("[{*}]");
     String[] tempUrlParts = Arrays.copyOf(urlParts, urlParts.length);
     String newURL = "";
+    String newPostBody = "";
     for (int i = 0; i < tempUrlParts.length; i++)
     {
       Integer idx = gd.getIndexOf(tempUrlParts[i]);
@@ -273,11 +298,87 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
           }
         }
       }
+      else //field not found - add lastpollDateTime and currentDateTime URL params
+      {
+        //TODO: Test this part
+        if (tempUrlParts[i].equals("$lastPollingDateTime"))
+        {
+          Long timeValue = (Long)lastPollingDateTime.getTime();
+          if (useEpochMilliseconds == false)
+          {
+            timeValue = timeValue / 1000;
+          }            
+          tempUrlParts[i] = timeValue.toString();
+        }
+        else if(tempUrlParts[i].equals("$currentDateTime"))
+        {
+          Date currentDateTime = new Date();
+          Long timeValue = (Long)currentDateTime.getTime();
+          if (useEpochMilliseconds == false)
+          {
+            timeValue = timeValue / 1000;
+          }            
+          tempUrlParts[i] = timeValue.toString();            
+        }
+      }
+      
       newURL += tempUrlParts[i];
     }
+    if (httpMethod.equals("POST"))
+    {
+      postBodyParts = postBody.split("[{*}]");
+      String[] tempPostBodyParts = Arrays.copyOf(postBodyParts, postBodyParts.length);
+      for (int i = 0; i < tempPostBodyParts.length; i++)
+      {
+        Integer idx = gd.getIndexOf(tempPostBodyParts[i]);
+        // LOGGER.info(tempPostBodyParts[i].toString() + ":" + idx.toString());
+        if (idx >= 0)
+        {
+          Field field = geoevent.getField(new FieldExpression(tempPostBodyParts[i]));
+          if (field != null)
+          {
+            String fieldValue = field.getValue().toString();
+            tempPostBodyParts[i] = fieldValue;
+            if (fieldValue != null)
+            {
+              // LOGGER.info("Got " + field.getDefinition().getName()
+              // + " " + tempPostBodyParts[i]);
+            }
+          }
+          else //add lastpollDateTime and currentDateTime PostBody
+          {
+            //TODO: Test this part
+            if (tempPostBodyParts[i].equals("$lastPollingDateTime"))
+            {
+              Long timeValue = (Long)lastPollingDateTime.getTime();
+              if (useEpochMilliseconds == false)
+              {
+                timeValue = timeValue / 1000;
+              }
+              tempPostBodyParts[i] = timeValue.toString();
+            }
+            else if(tempPostBodyParts[i].equals("$currentDateTime"))
+            {
+              Date currentDateTime = new Date();
+              Long timeValue = (Long)currentDateTime.getTime();
+              if (useEpochMilliseconds == false)
+              {
+                timeValue = timeValue / 1000;
+              }
+              tempPostBodyParts[i] = timeValue.toString();            
+            }
+          }
+        }
+        newPostBody += tempPostBodyParts[i]; 
+      }
+    }
     LOGGER.debug("New URL " + newURL);
-
-    HttpRequester httpRequester = new HttpRequester(newURL);
+    if(httpMethod.equals("POST"))
+    {
+      LOGGER.debug("New PostBody " + newPostBody);    
+    }
+    
+    HttpRequester httpRequester = new HttpRequester(newURL, newPostBody);
     executor.execute(httpRequester);
 
     // getFeed(newURL);
@@ -528,7 +629,7 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
     return json;
   }
 
-  private void getFeed(String endpointURL)
+  private void getFeed(String endpointURL, String postPayload)
   {
     // System.out.println("getFeed: " + messageType);
     GeoEventHttpClient geHttp = HttpHandlerService.httpClientService.createNewClient();
@@ -537,20 +638,34 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
     {
       URL url = new URL(endpointURL);
       String queryString = "";
-      HttpGet httpGet = geHttp.createGetRequest(url, queryString);
+      HttpRequestBase httpRequest = null;
+      if(httpMethod.equals("GET"))
+      {
+        httpRequest = geHttp.createGetRequest(url, queryString);
+      }
+      else if(httpMethod.equals("POST"))
+      {
+        httpRequest = geHttp.createPostRequest(url, postPayload, postBodyType);
+      }
+      else if(httpMethod.equals("PUT"))
+      {
+        geHttp.createPutRequest(url, postPayload.getBytes(), postBodyType);
+      }
 
-      if (headers.length > 0) 
+      if (headers != null && headers.length > 0) 
       {
         for (int i = 0; i < headers.length; i++)
         {
           String[] nameValue = headers[i].split(":");
-          httpGet.addHeader(nameValue[0], nameValue[1]);       
+          httpRequest.addHeader(nameValue[0], nameValue[1]);                   
         }
       }
 
       try
       {
-        HttpResponse response = geHttp.execute(httpGet, GeoEventHttpClient.DEFAULT_TIMEOUT);
+        HttpResponse response = null;
+        response = geHttp.execute(httpRequest, GeoEventHttpClient.DEFAULT_TIMEOUT);   
+        
         HttpEntity entity = (response != null) ? response.getEntity() : null;
 
         if (entity != null)
@@ -562,7 +677,7 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
 
         if (statusLine.getStatusCode() != HttpStatus.SC_OK)
         {
-          String message = httpGet.getRequestLine().getUri() + " :  Request failed(" + statusLine.toString() + ")";
+          String message = httpRequest.getRequestLine().getUri() + " :  Request failed(" + statusLine.toString() + ")";
           LOGGER.error(message);
         }
 
@@ -613,16 +728,18 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
   class HttpRequester implements Runnable
   {
     private String endpointURL;
+    private String postPayload;
 
-    public HttpRequester(String endpointURL)
+    public HttpRequester(String endpointURL, String postPayload)
     {
       this.endpointURL = endpointURL;
+      this.postPayload = postPayload;
     }
 
     @Override
     public void run()
     {
-      getFeed(endpointURL);
+      getFeed(endpointURL, postPayload);
     }
   }
 }

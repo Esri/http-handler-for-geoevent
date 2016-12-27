@@ -45,9 +45,11 @@ public class HttpHandlerDefinition extends GeoEventProcessorDefinitionBase
       List<LabeledValue> methodAllowedValues = new ArrayList<>();
       methodAllowedValues.add(new LabeledValue("GET", "GET"));
       methodAllowedValues.add(new LabeledValue("POST", "POST"));
+      /*
       methodAllowedValues.add(new LabeledValue("PUT", "PUT"));
       methodAllowedValues.add(new LabeledValue("UPDATE", "UPDATE"));
       methodAllowedValues.add(new LabeledValue("DELETE", "DELETE"));
+      */
       propertyDefinitions.put("method", new PropertyDefinition("method", PropertyType.String, "GET", "Method", "HTTP method to be used", false, false, methodAllowedValues));
 
       List<LabeledValue> formatAllowedValues = new ArrayList<>();
@@ -62,7 +64,7 @@ public class HttpHandlerDefinition extends GeoEventProcessorDefinitionBase
       formatAllowedValues.add(new LabeledValue("Client", "CLIENT"));
       propertyDefinitions.put("mode", new PropertyDefinition("Mode", PropertyType.String, "CLIENT", "Mode", "Mode", true, false, modeAllowedValues));
       
-      propertyDefinitions.put("clientURL", new PropertyDefinition("clientURL", PropertyType.String, "", "URL", "URL composed from fields in the format http://host/{field1}/folder/{field2}?value1={field3}", false, false));
+      propertyDefinitions.put("clientURL", new PropertyDefinition("clientURL", PropertyType.String, "", "URL", "URL composed from fields in the format http://host/{field1}/folder/{field2}?value1={field3}&value2={$lastPollingDateTime}&value3={$currentDateTime}. Processor-defined (epoch-millisecond) time fields are $lastPollingDateTime and $currentDateTime", false, false));
       propertyDefinitions.put("JsonObjectName", new PropertyDefinition("JsonObjectName", PropertyType.String, "", "Objectname", "Tag to use as object name", false, false));
       propertyDefinitions.put("httpMethod", new PropertyDefinition("httpMethod", PropertyType.String, "Get", "HTTP method", "HTTP method", true, false, methodAllowedValues));
       propertyDefinitions.put("CreateGeoEventDefinition", new PropertyDefinition("CreateGeoEventDefinition", PropertyType.Boolean, true, "Create New GeoEvent Definition", "Create New GeoEvent Definition", false, false));
@@ -79,8 +81,12 @@ public class HttpHandlerDefinition extends GeoEventProcessorDefinitionBase
       propertyDefinitions.put("YGeometryField", new PropertyDefinition("YGeometryField", PropertyType.String, "Latitude", "Y Geometry Field", "Y Geometry Field", "BuildGeometryFromFields=true", false, false));
       propertyDefinitions.put("ZGeometryField", new PropertyDefinition("ZGeometryField", PropertyType.String, "", "Z Geometry Field", "Z Geometry Field", "BuildGeometryFromFields=true", false, false));
       propertyDefinitions.put("WKIDGeometryField", new PropertyDefinition("WKIDGeometryField", PropertyType.String, "4326", "WKID Filed or Value", "WKID field or value", false, false));
+      propertyDefinitions.put("CustomDateFormat", new PropertyDefinition("CustomDateFormat", PropertyType.String, "", "Custom Date Format", "Custom Date Format", false, false));
+      
       propertyDefinitions.put("frequency", new PropertyDefinition("frequency", PropertyType.Integer, "5", "Frequency", "Frequency in seconds", false, false));
       propertyDefinitions.put("httpTimeoutValue", new PropertyDefinition("httpTimeoutValue", PropertyType.Integer, "5", "Http Timeout Value", "Http Timeout Value", false, false));
+      propertyDefinitions.put("historicalTimespanSeconds", new PropertyDefinition("historicalTimespanSeconds", PropertyType.Integer, "5", "Historical Timespan (seconds)", "Historical Timespan in seconds for calculate initial value of the processor-defined field $lastPollingDateTime", false, false));
+      propertyDefinitions.put("useEpochMilliseconds", new PropertyDefinition("useEpochMilliseconds", PropertyType.Boolean, false, "Use Epoch Milliseconds", "Use Epoch Milliseconds. The default is epoch seconds", false, false));
     }
     catch (Exception error)
     {

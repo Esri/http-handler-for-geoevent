@@ -29,6 +29,7 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetDecoder;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
@@ -71,7 +72,6 @@ public class HttpHandlerAdapter implements Runnable
 
   private String                              geoEventDefinitionName;
   protected String                            lastGeoEventDefinitionsGUID                     = null;
-  private String                              customDateFormat = "";
 
   private String                              jsonObjectName;
 
@@ -84,6 +84,8 @@ public class HttpHandlerAdapter implements Runnable
   private boolean                             isLearningMode                                  = false;
   private String                              id;
   private String                              trackIdField;
+  private String                              customDateFormat;
+  private SimpleDateFormat                    customDateParser                                = null;
 
   private HttpHandlerDefinition               definition;
   
@@ -147,6 +149,7 @@ public class HttpHandlerAdapter implements Runnable
   
   public void afterPropertiesSet(HttpHandler httpHandler)
   {
+    customDateParser = null;
     jsonObjectName = null;
     lastGeoEventDefinitionsGUID = null;
     if (httpHandler.hasProperty(JSON_OBJECT_NAME))
@@ -162,8 +165,12 @@ public class HttpHandlerAdapter implements Runnable
     if (creatingGeoEventDefinition && httpHandler.hasProperty(NEW_GEOEVENT_DEFINITION_NAME_PROPERTY_NAME))
       geoEventDefinitionName = httpHandler.getProperty(NEW_GEOEVENT_DEFINITION_NAME_PROPERTY_NAME).getValueAsString();
     if (httpHandler.hasProperty(CUSTOM_DATE_FORMAT_PROPERTY_NAME))
+    {
       customDateFormat = httpHandler.getProperty(CUSTOM_DATE_FORMAT_PROPERTY_NAME).getValueAsString();
-
+      if (customDateFormat != null && !customDateFormat.trim().isEmpty())
+        customDateParser = new SimpleDateFormat(customDateFormat);
+    }
+    
     if (httpHandler.hasProperty(BUILD_GEOMETRY_FROM_FIELDS_PROPERTY_NAME))
     {
       buildGeometryFromFields = ((Boolean) (httpHandler.getProperty(BUILD_GEOMETRY_FROM_FIELDS_PROPERTY_NAME).getValue())).booleanValue();
