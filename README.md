@@ -1,4 +1,4 @@
-# httpHandler-for-geoevent
+# http-handler-for-geoevent
 
 ArcGIS 10.4.x GeoEvent Extension to send HTTP request by forming URL from the fields of the incoming GeoEvent. 
 
@@ -55,7 +55,3 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 A copy of the license is available in the repository's [license.txt](license.txt?raw=true) file.
-
-[](ArcGIS, GeoEvent, Processor)
-[](Esri Tags: ArcGIS GeoEvent Extension for Server)
-[](Esri Language: Java)
