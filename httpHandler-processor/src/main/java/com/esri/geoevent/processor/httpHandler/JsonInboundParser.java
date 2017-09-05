@@ -1,3 +1,27 @@
+/*
+  Copyright 2017 Esri
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.​
+
+  For additional information, contact:
+  Environmental Systems Research Institute, Inc.
+  Attn: Contracts Dept
+  380 New York Street
+  Redlands, California, USA 92373
+
+  email: contracts@esri.com
+*/
+
 package com.esri.geoevent.processor.httpHandler;
 
 import java.io.IOException;
@@ -144,8 +168,7 @@ public class JsonInboundParser
     if (lastGeoEventDefinitionsGUID != null)
     {
       GeoEventDefinition def = geoEventCreator.getGeoEventDefinitionManager().getGeoEventDefinition(lastGeoEventDefinitionsGUID);
-      // if the old definition still exists and hasn't been modified
-      // structurally, just reuse it.
+      // if the old definition still exists and hasn't been modified structurally, just reuse it.
       if (def != null && def.getFieldDefinitions().size() == perfectSize)
         geoEventDefinition = def;
     }
@@ -198,12 +221,11 @@ public class JsonInboundParser
     try
     {
       event = geoEventCreator.create(geoEventDefinition.getGuid());
-/////
+
       event.setProperty(GeoEventPropertyName.TYPE, "event");
       event.setProperty(GeoEventPropertyName.OWNER_ID, id);
       event.setProperty(GeoEventPropertyName.OWNER_URI, uri);
 
-////        
       populateGeoEvent(event, node, geoEventDefinition.getFieldDefinitions());
       constructGeometry(event);
     }
@@ -334,11 +356,6 @@ public class JsonInboundParser
 
       try
       {
-        /*
-         * Geometry geom = GeometryEngine.intersect(polyline, meridian,
-         * SpatialReference.create(wkid)); if (geom != null) { //TODO split the
-         * polyline at the point of intersection }
-         */
         MapGeometry pline = new MapGeometry(polyline, SpatialReference.create(wkid));
         LOGGER.debug(pline.toString());
         event.setGeometry(pline);
@@ -441,22 +458,20 @@ public class JsonInboundParser
             return Converter.convertToBoolean(value);
           case Date:
             // LOGGER.info("JsonInboundParser:convert:Date " +
-            // value.toString());
             if (node.isTextual())
             {
               // LOGGER.info("JsonInboundParser:convert:Date is textual");
-              // flightaware sent date in epoch second, make it milliseconds by
-              // appending "000"
+
+              // flightaware sent date in epoch seconds, make it milliseconds by appending "000"
               return (customDateFormat != null && !customDateFormat.trim().isEmpty()) ? DateUtil.convert(node.asText() + "000", customDateFormat) : DateUtil.convert(node.asText() + "000");
             }
             else if (node.isLong() || node.isInt())
             {
-              Long ms = (Long) value * 1000; // flightaware sent date in epoch
-                                             // second, make it milliseconds
-              // LOGGER.info("JsonInboundParser:convert: " + value.toString() +
-              // " -> " + ms.toString());
+              // flightaware sent date in epoch seconds, convert it to milliseconds
+              Long ms = (Long) value * 1000; 
+
+              // LOGGER.info("JsonInboundParser:convert: " + value.toString() + " -> " + ms.toString());
               return DateUtil.convert(ms.toString());
-              // return DateUtil.convert(value.toString());
             }
             break;
           case Double:
@@ -489,13 +504,10 @@ public class JsonInboundParser
     GeoEventDefinition geoEventDefinition = new DefaultGeoEventDefinition();
     geoEventDefinition.setName(geoEventDefinitionName);
     geoEventDefinition.setAccessType(AccessType.editable);
-    // get the GeoEvent Definition owner
-    // Uri uri = new Uri( "auto-generated",
-    // definition.getDomain()+"."+definition.getName(),
-    // definition.getVersion());
-    String edOwner = uri.toString();
 
+    String edOwner = uri.toString();
     geoEventDefinition.setOwner(edOwner);
+
     haveDate = false;
     haveGeometry = false;
 
@@ -533,10 +545,8 @@ public class JsonInboundParser
             field = arrayElements.next();
           else
           {
-            // If we're examining an array with no elements in it,
-            // we
-            // have no idea what it should contain. But String is a
-            // pretty good guess.
+            // If we're examining an array with no elements in it, we
+            // have no idea what it should contain. But String is a pretty good guess.
             FieldDefinition fieldDef = new DefaultFieldDefinition(fieldName, FieldType.String);
             fieldDef.setCardinality(FieldCardinality.Many);
             fieldDefinitions.add(fieldDef);

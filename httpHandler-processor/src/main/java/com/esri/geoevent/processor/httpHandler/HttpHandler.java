@@ -1,5 +1,5 @@
 /*
-  Copyright 1995-2016 Esri
+  Copyright 2017 Esri
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -11,7 +11,7 @@
     distributed under the License is distributed on an "AS IS" BASIS,
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
-    limitations under the License.
+    limitations under the License.​
 
   For additional information, contact:
   Environmental Systems Research Institute, Inc.
@@ -20,7 +20,7 @@
   Redlands, California, USA 92373
 
   email: contracts@esri.com
- */
+*/
 
 package com.esri.geoevent.processor.httpHandler;
 
@@ -210,38 +210,6 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
       }      
     }
         
-
-    /*
-     * Boolean useProxy = (Boolean)
-     * getProperty(HttpTransportService.CLIENT_URL_USE_PROXY_PROPERTY).
-     * getValue( ); if (useProxy) { String proxy =
-     * getProperty(HttpTransportService.CLIENT_URL_PROXY_PROPERTY).
-     * getValueAsString(); clientUrl = proxy + "?" + clientUrl; }
-     * 
-     * clientParameters =
-     * getProperty(HttpTransportService.CLIENT_PARAMETERS_PROPERTY).
-     * getValueAsString(); acceptableMimeTypes_client =
-     * getProperty(HttpTransportService. ACCEPTABLE_MIME_TYPES_CLIENT_PROPERTY).
-     * getValueAsString(); acceptableMimeTypes_server =
-     * getProperty(HttpTransportService. ACCEPTABLE_MIME_TYPES_SERVER_PROPERTY).
-     * getValueAsString(); postBodyType =
-     * getProperty(HttpTransportService.POST_CONTENT_TYPE_PROPERTY).
-     * getValueAsString(); honorLastModified =
-     * getProperty(HttpTransportService.HONOR_LAST_MODIFIED_PROPERTY).
-     * getValueAsString().equals("true") ? true : false;
-     * 
-     * useLongPolling =
-     * getProperty(HttpTransportService.USE_LONG_POLLING_PROPERTY).
-     * getValueAsString().equals("true") ? true : false;
-     * 
-     * postFrom =
-     * getProperty(HttpTransportService.POST_FROM_PROPERTY).getValueAsString ();
-     * postParams = getProperty(HttpTransportService.POST_PARAM_PROPERTY).
-     * getValueAsString(); eom =
-     * StringEscapeUtils.unescapeJava(getProperty(HttpTransportService.
-     * HTTP_APPEND_TO_MESSAGE).getValueAsString());
-     */
-
     if (hasProperty("historicalTimespanSeconds"))
     {
       historicalTimespanSeconds = Integer.parseInt(getProperty("historicalTimespanSeconds").getValueAsString());
@@ -293,14 +261,13 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
           tempUrlParts[i] = fieldValue;
           if (fieldValue != null)
           {
-            // LOGGER.info("Got " + field.getDefinition().getName()
-            // + " " + tempUrlParts[i]);
+            // LOGGER.info("Got " + field.getDefinition().getName() + " " + tempUrlParts[i]);
           }
         }
       }
-      else //field not found - add lastpollDateTime and currentDateTime URL params
+      else
       {
-        //TODO: Test this part
+         //field not found - add lastpollDateTime and currentDateTime URL params
         if (tempUrlParts[i].equals("$lastPollingDateTime"))
         {
           Long timeValue = (Long)lastPollingDateTime.getTime();
@@ -324,6 +291,7 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
       
       newURL += tempUrlParts[i];
     }
+
     if (httpMethod.equals("POST"))
     {
       postBodyParts = postBody.split("[{*}]");
@@ -341,13 +309,12 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
             tempPostBodyParts[i] = fieldValue;
             if (fieldValue != null)
             {
-              // LOGGER.info("Got " + field.getDefinition().getName()
-              // + " " + tempPostBodyParts[i]);
+              // LOGGER.info("Got " + field.getDefinition().getName() + " " + tempPostBodyParts[i]);
             }
           }
-          else //add lastpollDateTime and currentDateTime PostBody
+          else
           {
-            //TODO: Test this part
+            // add lastpollDateTime and currentDateTime PostBody
             if (tempPostBodyParts[i].equals("$lastPollingDateTime"))
             {
               Long timeValue = (Long)lastPollingDateTime.getTime();
@@ -381,22 +348,8 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
     HttpRequester httpRequester = new HttpRequester(newURL, newPostBody);
     executor.execute(httpRequester);
 
-    // getFeed(newURL);
     return null;
   }
-
-  /*
-   * ArrayNode arrayNode = null; if (body.substring(0, 5).contains("<?xml")) {
-   * JSONObject jobj = XML.toJSONObject(body); String json = jobj.toString();
-   * LOGGER.debug(json); JsonNode tree = mapper.readTree(json); if
-   * (tree.isArray() == false) { arrayNode =
-   * (ArrayNode)tree.findPath(collectionName); } } else { //Parse and put on the
-   * elementMap JsonNode tree = mapper.readTree(body); arrayNode =
-   * (ArrayNode)tree.get(collectionName); } if (arrayNode != null) { int count =
-   * arrayNode.size(); for(int i = 0; i < count; i++) { JsonNode item =
-   * arrayNode.get(i); String id = item.get(elementIdField).asText();
-   * synchronized (locker) { itemMap.put(id, item.toString()); } } }
-   */
 
   @Override
   public List<EventDestination> getEventDestinations()
@@ -409,11 +362,7 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
   {
     super.validate();
     List<String> errors = new ArrayList<String>();
-    /*
-     * if (reportInterval <= 0)
-     * errors.add(LOGGER.translate("VALIDATION_INVALID_REPORT_INTERVAL",
-     * definition.getName()));
-     */
+
     if (errors.size() > 0)
     {
       StringBuffer sb = new StringBuffer();
@@ -576,8 +525,7 @@ public class HttpHandler extends GeoEventProcessorBase implements GeoEventProduc
       if (lastGeoEventDefinitionsGUID != null)
       {
         GeoEventDefinition def = geoEventCreator.getGeoEventDefinitionManager().getGeoEventDefinition(lastGeoEventDefinitionsGUID);
-        // if the old definition still exists and hasn't been modified
-        // structurally, just reuse it.
+        // if the old definition still exists and hasn't been modified structurally, just reuse it.
         if (def != null && def.getFieldDefinitions().size() == perfectSize)
           geoEventDefinition = def;
       }

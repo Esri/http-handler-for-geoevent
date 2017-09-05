@@ -1,5 +1,5 @@
 /*
-  Copyright 1995-2013 Esri
+  Copyright 2017 Esri
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -11,7 +11,7 @@
     distributed under the License is distributed on an "AS IS" BASIS,
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
-    limitations under the License.
+    limitations under the License.​
 
   For additional information, contact:
   Environmental Systems Research Institute, Inc.
@@ -20,7 +20,7 @@
   Redlands, California, USA 92373
 
   email: contracts@esri.com
- */
+*/
 
 package com.esri.geoevent.processor.httpHandler;
 
@@ -209,8 +209,7 @@ public class HttpHandlerAdapter implements Runnable
   public void receive(String json)
   {
     // LOGGER.debug("ChannelId: " + channelId);
-    // check the cache for an existing string buffer - we might not be done with
-    // it
+    // check the cache for an existing string buffer - we might not be done with it
     StringBuilder stringBuilder = new StringBuilder(json);
 
     String remainingString = "";
@@ -332,29 +331,10 @@ public class HttpHandlerAdapter implements Runnable
   {
     Uri uri = new Uri("auto-generated", definition.getDomain() + "." + definition.getName(), definition.getVersion());
     
-     //parser = new JsonInboundParser(creatingGeoEventDefinition,
-     //geoEventDefinitionName, buildGeometryFromFields, xGeometryField,
-     //yGeometryField, zGeometryField, wkidGeometryField, wkTextGeometryField,
-     //customDateFormat, geoEventCreator, uri);
     JsonInboundParser parser = new JsonInboundParser(creatingGeoEventDefinition, geoEventDefinitionName, 
         buildGeometryFromFields, xGeometryField, yGeometryField, zGeometryField, wkidGeometryField, 
         wkTextGeometryField, customDateFormat, geoEventCreator, uri, id, trackIdField);
-    //parser.setCreatingGeoEventDefinition(creatingGeoEventDefinition).setGeoEventDefinitionName(geoEventDefName)// (geoEventDefinitionName)
-        // .setBuildGeometryFromFields(buildGeometryFromFields)
-        // .setxGeometryField(xGeometryField)
-        // .setyGeometryField(yGeometryField)
-        // .setzGeometryField(zGeometryField)
-        // .setWkidGeometryField(wkidGeometryField)
-        // .setWkTextGeometryField(wkTextGeometryField)
-    //    .setCustomDateFormat(customDateFormat).setGeoEventCreator(geoEventCreator);
-    // .setUri(uri);
 
-    //if (geoEventDefName.equals("WazeAlert"))
-    //{
-      //parser.setBuildGeometryFromFields(buildGeometryFromFields).setxGeometryField(xGeometryField).setyGeometryField(yGeometryField).setzGeometryField(zGeometryField);
-      // .setWkidGeometryField(wkidGeometryField)
-      // .setWkTextGeometryField(wkTextGeometryField);
-    //}
     return parser;
   }
 
