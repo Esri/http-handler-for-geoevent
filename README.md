@@ -1,6 +1,6 @@
 # http-handler-for-geoevent
 
-ArcGIS 10.4.x GeoEvent Extension to send HTTP request by forming URL from the fields of the incoming GeoEvent. 
+ArcGIS GeoEvent Extension to send HTTP request by forming URL from the fields of the incoming GeoEvent. 
 
 ![App](httpHandler-for-geoevent.png?raw=true)
 
